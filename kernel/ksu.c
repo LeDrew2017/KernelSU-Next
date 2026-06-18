@@ -10,6 +10,7 @@
 #include "klog.h" // IWYU pragma: keep
 #include "ksu.h"
 #include "throne_tracker.h"
+#include "selinux/selinux_hide.h"
 
 #ifdef CONFIG_KSU_SUSFS
 #include <linux/susfs.h>
@@ -77,6 +78,9 @@ int __init kernelsu_init(void)
 	kobject_del(&THIS_MODULE->mkobj.kobj);
 #endif
 #endif
+	
+	ksu_selinux_hide_init(); // so the feature is registered
+
 	return 0;
 }
 

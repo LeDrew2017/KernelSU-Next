@@ -18,6 +18,13 @@
 #define KERNEL_EXEC_TYPE "ksu_exec"
 #define ALL NULL
 
+// selinux_hide is compiled in-place here. It needs the kernel selinux internals
+// pulled in above, plus KERNEL_SU_DOMAIN / KERNEL_SU_FILE defined just above, and
+// sepol_expected_argc declared below. The INTERNAL define pulls in the
+// sepolicy-tracking machinery from selinux_hide.h.
+#define KSU_SELINUX_HIDE_INTERNAL
+#include "selinux_hide.c"
+
 static struct policydb *get_policydb(void)
 {
 	struct policydb *db;
@@ -162,6 +169,32 @@ void apply_kernelsu_rules()
 #define CMD_TYPE_TRANSITION 7
 #define CMD_TYPE_CHANGE 8
 #define CMD_GENFSCON 9
+
+// used by selinux_hide.c (ksu_add_shit_to_list) to know how many args a cmd has
+int sepol_expected_argc(u32 cmd)
+{
+	switch (cmd) {
+	case CMD_NORMAL_PERM:
+		return 4;
+	case CMD_XPERM:
+		return 5;
+	case CMD_TYPE_STATE:
+		return 1;
+	case CMD_TYPE:
+	case CMD_TYPE_ATTR:
+		return 2;
+	case CMD_ATTR:
+		return 1;
+	case CMD_TYPE_TRANSITION:
+		return 5;
+	case CMD_TYPE_CHANGE:
+		return 4;
+	case CMD_GENFSCON:
+		return 3;
+	default:
+		return -EINVAL;
+	}
+}
 
 #ifdef CONFIG_64BIT
 struct sepol_data {
@@ -349,6 +382,12 @@ int handle_sepolicy(unsigned long arg3, void __user *arg4)
 		}
 		ret = success ? 0 : -1;
 
+		// selinux_hide: track src/tgt of allow rules
+		if (success && subcmd == 1) {
+			const char *args[] = { s, t, NULL };
+			ksu_add_shit_to_list(cmd, args);
+		}
+
 	} else if (cmd == CMD_XPERM) {
 		char src_buf[MAX_SEPOL_LEN];
 		char tgt_buf[MAX_SEPOL_LEN];
@@ -409,8 +448,12 @@ int handle_sepolicy(unsigned long arg3, void __user *arg4)
 		} else {
 			pr_err("sepol: unknown subcmd: %d\n", subcmd);
 		}
-		if (success)
+		if (success) {
 			ret = 0;
+			// selinux_hide: track the type name
+			const char *args[] = { src, NULL };
+			ksu_add_shit_to_list(cmd, args);
+		}
 
 	} else if (cmd == CMD_TYPE || cmd == CMD_TYPE_ATTR) {
 		char type[MAX_SEPOL_LEN];
@@ -437,6 +480,12 @@ int handle_sepolicy(unsigned long arg3, void __user *arg4)
 		}
 		ret = 0;
 
+		// selinux_hide: track the type name
+		{
+			const char *args[] = { type, NULL };
+			ksu_add_shit_to_list(cmd, args);
+		}
+
 	} else if (cmd == CMD_ATTR) {
 		char attr[MAX_SEPOL_LEN];
 
@@ -449,6 +498,12 @@ int handle_sepolicy(unsigned long arg3, void __user *arg4)
 			goto exit;
 		}
 		ret = 0;
+
+		// selinux_hide: track the attribute name
+		{
+			const char *args[] = { attr, NULL };
+			ksu_add_shit_to_list(cmd, args);
+		}
 
 	} else if (cmd == CMD_TYPE_TRANSITION) {
 		char src[MAX_SEPOL_LEN];
