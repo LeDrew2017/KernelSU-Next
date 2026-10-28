@@ -173,12 +173,16 @@ endif
 $(info -- KernelSU-Next tag: $(KSU_VERSION_TAG))
 ccflags-y += -DKSU_VERSION_TAG=\"$(KSU_VERSION_TAG)\"
 
+# Certificate (DER) size and SHA-256 of the key the manager APK is signed with.
+# These are this fork's own key. Upstream's default key was
+# size 0x3e6, hash 79e590113c4c4c0c222978e413a5faa801666957b1212a328e46c00c69821bf7.
+# Both can still be overridden from the environment or the make command line.
 ifndef KSU_NEXT_MANAGER_SIZE
-KSU_NEXT_MANAGER_SIZE := 0x3e6
+KSU_NEXT_MANAGER_SIZE := 0x3a7
 endif
 
 ifndef KSU_NEXT_MANAGER_HASH
-KSU_NEXT_MANAGER_HASH := 79e590113c4c4c0c222978e413a5faa801666957b1212a328e46c00c69821bf7
+KSU_NEXT_MANAGER_HASH := eb2e7ac89cc48794161334897071093adecc7ccb8a9f37d9677b485dc71c5d4f
 endif
 
 ifdef KSU_MANAGER_PACKAGE
