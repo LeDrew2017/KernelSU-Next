@@ -157,6 +157,15 @@ KSU_VERSION_TAG_FALLBACK := v0.0.1
 KSU_VERSION_TAG=$(KSU_VERSION_TAG_FALLBACK)
 endif
 
+# No git tag reachable (shallow or --no-tags clone): use the tag committed in
+# kernel/KSU_VERSION_TAG, so the manager never falls back to "v0.0.0".
+ifeq ($(strip $(KSU_VERSION_TAG)),)
+KSU_VERSION_TAG := $(strip $(shell cat $(MDIR)KSU_VERSION_TAG 2>/dev/null))
+endif
+ifeq ($(strip $(KSU_VERSION_TAG)),)
+KSU_VERSION_TAG := v0.0.1
+endif
+
 ifdef KSU_VERSION_TAG_OVERRIDE
 KSU_VERSION_TAG := $(KSU_VERSION_TAG_OVERRIDE)
 endif
