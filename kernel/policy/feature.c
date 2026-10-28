@@ -61,7 +61,7 @@ static int force_feature_param_set(const char *val, const struct kernel_param *k
 		return 0;
 	}
 
-	for (; *p; p = end ? end + 1 : end) {
+	for (; *p; p = *end ? end + 1 : end) {
 		end = strchrnul(p, ',');
 		if (end == p) {
 			continue;
@@ -213,6 +213,11 @@ int ksu_set_feature(u32 feature_id, u64 value)
 		return -EINVAL;
 	}
 
+	if (test_bit(feature_id, forced_mask)) {
+		pr_warn("feature: feature %u is forced by boot config\n", feature_id);
+		return -EPERM;
+	}
+
 	mutex_lock(&feature_mutex);
 
 	handler = feature_handlers[feature_id];
@@ -226,12 +231,6 @@ int ksu_set_feature(u32 feature_id, u64 value)
 	if (!handler->set_handler) {
 		pr_warn("feature: no set_handler for feature %u\n", feature_id);
 		ret = -EOPNOTSUPP;
-		goto out;
-	}
-
-	if (test_bit(feature_id, forced_mask)) {
-		pr_warn("feature: feature %u is forced by boot config\n", feature_id);
-		ret = -EPERM;
 		goto out;
 	}
 
