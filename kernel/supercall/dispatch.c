@@ -1125,6 +1125,12 @@ static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
         .perm_check = only_root
     },
     {
+        .cmd = KSU_IOCTL_LOOKUP_SYMBOLS,
+        .name = "LOOKUP_SYMBOLS",
+        .handler = do_lookup_symbols,
+        .perm_check = only_root
+    },
+    {
         .cmd = KSU_IOCTL_GET_HOOK_MODE,
         .name = "GET_HOOK_MODE",
         .handler = do_get_hook_mode,
