@@ -896,6 +896,7 @@ static int do_get_sulog_fd(void __user *arg)
     return ksu_install_sulog_fd();
 }
 
+#ifdef KSU_SYSCALL_TABLE_HOOK // symbol_resolver.o is only linked in this hook mode
 /*
  * Resolve symbols of the running kernel image, exported or not, matching
  * them like ksuinit's /proc/kallsyms walk. Userspace uses this to bind a
@@ -974,6 +975,7 @@ out:
     kvfree(addrs);
     return ret;
 }
+#endif // KSU_SYSCALL_TABLE_HOOK
 
 // IOCTL handlers mapping table
 // clang-format off
@@ -1124,12 +1126,14 @@ static const struct ksu_ioctl_cmd_map ksu_ioctl_handlers[] = {
         .handler = do_get_sulog_fd,
         .perm_check = only_root
     },
+#ifdef KSU_SYSCALL_TABLE_HOOK // symbol_resolver.o is only linked in this hook mode
     {
         .cmd = KSU_IOCTL_LOOKUP_SYMBOLS,
         .name = "LOOKUP_SYMBOLS",
         .handler = do_lookup_symbols,
         .perm_check = only_root
     },
+#endif // KSU_SYSCALL_TABLE_HOOK
     {
         .cmd = KSU_IOCTL_GET_HOOK_MODE,
         .name = "GET_HOOK_MODE",
